@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+# Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
 #
 
 from snowflake.sqlalchemy import custom_types
@@ -15,7 +15,6 @@ def test_string_conversions():
         "TIMESTAMP_LTZ",
         "TIMESTAMP_NTZ",
         "GEOGRAPHY",
-        "GEOMETRY",
     ]
     sf_types = [
         "TEXT",

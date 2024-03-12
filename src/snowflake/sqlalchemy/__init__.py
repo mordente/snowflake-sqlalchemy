@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+# Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
 #
 
 import sys
@@ -49,7 +49,6 @@ from .custom_types import (
     DOUBLE,
     FIXED,
     GEOGRAPHY,
-    GEOMETRY,
     NUMBER,
     OBJECT,
     STRING,
@@ -91,7 +90,6 @@ __all__ = (
     "DOUBLE",
     "FIXED",
     "GEOGRAPHY",
-    "GEOMETRY",
     "OBJECT",
     "NUMBER",
     "STRING",

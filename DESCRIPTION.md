@@ -9,33 +9,10 @@ Source code is also available at:
 
 # Release Notes
 
-- 1.5.2
-
-  - Add support for sequence ordering in tests
-
-- v1.5.1(November 03, 2023)
-
-  - Fixed a compatibility issue with Snowflake Behavioral Change 1057 on outer lateral join, for more details check https://docs.snowflake.com/en/release-notes/bcr-bundles/2023_04/bcr-1057.
-  - Fixed credentials with `externalbrowser` authentication not caching due to incorrect parsing of boolean query parameters.
-    - This fixes other boolean parameter passing to driver as well.
-
-- v1.5.0(Aug 23, 2023)
-
-  - Added option to create a temporary stage command.
-  - Added support for geometry type.
-  - Fixed a compatibility issue of regex expression with SQLAlchemy 1.4.49.
-
-- v1.4.7(Mar 22, 2023)
-
-  - Re-applied the application name of driver connection `SnowflakeConnection` to `SnowflakeSQLAlchemy`.
-  - `SnowflakeDialect.get_columns` now throws a `NoSuchTableError` exception when the specified table doesn't exist, instead of the more vague `KeyError`.
-  - Fixed a bug that dialect can not be created with empty host name.
-  - Fixed a bug that `sqlalchemy.func.now` is not rendered correctly.
-
 - v1.4.6(Feb 8, 2023)
 
-  - Bumped snowflake-connector-python dependency to newest version which supports Python 3.11.
-  - Reverted the change of application name introduced in v1.4.5 until support gets added.
+- Bumped snowflake-connector-python dependency to newest version which supports Python 3.11.
+- Reverted the change of application name introduced in v1.4.5 until support gets added.
 
 - v1.4.5(Dec 7, 2022)
 

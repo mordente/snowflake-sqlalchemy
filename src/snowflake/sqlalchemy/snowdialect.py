@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+# Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
 #
 
 import operator
@@ -11,7 +11,7 @@ import sqlalchemy.types as sqltypes
 from sqlalchemy import event as sa_vnt
 from sqlalchemy import exc as sa_exc
 from sqlalchemy import util as sa_util
-from sqlalchemy.engine import URL, default, reflection
+from sqlalchemy.engine import default, reflection
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import text
 from sqlalchemy.sql.elements import quoted_name
@@ -38,7 +38,6 @@ from sqlalchemy.types import (
 )
 
 from snowflake.connector import errors as sf_errors
-from snowflake.connector.connection import DEFAULT_CONFIGURATION
 from snowflake.connector.constants import UTF8
 
 from .base import (
@@ -52,7 +51,6 @@ from .custom_types import (
     _CUSTOM_DECIMAL,
     ARRAY,
     GEOGRAPHY,
-    GEOMETRY,
     OBJECT,
     TIMESTAMP_LTZ,
     TIMESTAMP_NTZ,
@@ -63,7 +61,6 @@ from .custom_types import (
     _CUSTOM_Float,
     _CUSTOM_Time,
 )
-from .util import _update_connection_application_name, parse_url_boolean
 
 colspecs = {
     Date: _CUSTOM_Date,
@@ -107,10 +104,7 @@ ischema_names = {
     "OBJECT": OBJECT,
     "ARRAY": ARRAY,
     "GEOGRAPHY": GEOGRAPHY,
-    "GEOMETRY": GEOMETRY,
 }
-
-_ENABLE_SQLALCHEMY_AS_APPLICATION_NAME = True
 
 
 class SnowflakeDialect(default.DefaultDialect):
@@ -199,7 +193,7 @@ class SnowflakeDialect(default.DefaultDialect):
 
         return connector
 
-    def create_connect_args(self, url: URL):
+    def create_connect_args(self, url):
         opts = url.translate_connect_args(username="user")
         if "database" in opts:
             name_spaces = [unquote_plus(e) for e in opts["database"].split("/")]
@@ -212,11 +206,7 @@ class SnowflakeDialect(default.DefaultDialect):
                 raise sa_exc.ArgumentError(
                     f"Invalid name space is specified: {opts['database']}"
                 )
-        if (
-            "host" in opts
-            and ".snowflakecomputing.com" not in opts["host"]
-            and not opts.get("port")
-        ):
+        if ".snowflakecomputing.com" not in opts["host"] and not opts.get("port"):
             opts["account"] = opts["host"]
             if "." in opts["account"]:
                 # remove region subdomain
@@ -226,40 +216,10 @@ class SnowflakeDialect(default.DefaultDialect):
             opts["host"] = opts["host"] + ".snowflakecomputing.com"
             opts["port"] = "443"
         opts["autocommit"] = False  # autocommit is disabled by default
-
-        query = dict(**url.query)  # make mutable
-        cache_column_metadata = query.pop("cache_column_metadata", None)
+        opts.update(url.query)
         self._cache_column_metadata = (
-            parse_url_boolean(cache_column_metadata) if cache_column_metadata else False
+            opts.get("cache_column_metadata", "false").lower() == "true"
         )
-
-        # URL sets the query parameter values as strings, we need to cast to expected types when necessary
-        for name, value in query.items():
-            maybe_type_configuration = DEFAULT_CONFIGURATION.get(name)
-            if (
-                not maybe_type_configuration
-            ):  # if the parameter is not found in the type mapping, pass it through as a string
-                opts[name] = value
-                continue
-
-            (_, expected_type) = maybe_type_configuration
-            if not isinstance(expected_type, tuple):
-                expected_type = (expected_type,)
-
-            if isinstance(
-                value, expected_type
-            ):  # if the expected type is str, pass it through as a string
-                opts[name] = value
-
-            elif (
-                bool in expected_type
-            ):  # if the expected type is bool, parse it and pass as a boolean
-                opts[name] = parse_url_boolean(value)
-            else:
-                # TODO: other types like int are stil passed through as string
-                # https://github.com/snowflakedb/snowflake-sqlalchemy/issues/447
-                opts[name] = value
-
         return ([], opts)
 
     def has_table(self, connection, table_name, schema=None):
@@ -595,13 +555,11 @@ class SnowflakeDialect(default.DefaultDialect):
                     "autoincrement": is_identity == "YES",
                     "comment": comment,
                     "primary_key": (
-                        (
-                            column_name
-                            in schema_primary_keys[table_name]["constrained_columns"]
-                        )
-                        if current_table_pks
-                        else False
-                    ),
+                        column_name
+                        in schema_primary_keys[table_name]["constrained_columns"]
+                    )
+                    if current_table_pks
+                    else False,
                 }
             )
             if is_identity == "YES":
@@ -690,19 +648,13 @@ class SnowflakeDialect(default.DefaultDialect):
                     "autoincrement": is_identity == "YES",
                     "comment": comment if comment != "" else None,
                     "primary_key": (
-                        (
-                            column_name
-                            in schema_primary_keys[table_name]["constrained_columns"]
-                        )
-                        if current_table_pks
-                        else False
-                    ),
+                        column_name
+                        in schema_primary_keys[table_name]["constrained_columns"]
+                    )
+                    if current_table_pks
+                    else False,
                 }
             )
-
-        # If we didn't find any columns for the table, the table doesn't exist.
-        if len(ans) == 0:
-            raise sa_exc.NoSuchTableError()
         return ans
 
     def get_columns(self, connection, table_name, schema=None, **kw):
@@ -717,10 +669,7 @@ class SnowflakeDialect(default.DefaultDialect):
         if schema_columns is None:
             # Too many results, fall back to only query about single table
             return self._get_table_columns(connection, table_name, schema, **kw)
-        normalized_table_name = self.normalize_name(table_name)
-        if normalized_table_name not in schema_columns:
-            raise sa_exc.NoSuchTableError()
-        return schema_columns[normalized_table_name]
+        return schema_columns[self.normalize_name(table_name)]
 
     @reflection.cache
     def get_table_names(self, connection, schema=None, **kw):
@@ -880,26 +829,10 @@ class SnowflakeDialect(default.DefaultDialect):
             result = self._get_view_comment(connection, table_name, schema)
 
         return {
-            "text": (
-                result._mapping["comment"]
-                if result and result._mapping["comment"]
-                else None
-            )
+            "text": result._mapping["comment"]
+            if result and result._mapping["comment"]
+            else None
         }
-
-    def connect(self, *cargs, **cparams):
-        return (
-            super().connect(
-                *cargs,
-                **(
-                    _update_connection_application_name(**cparams)
-                    if _ENABLE_SQLALCHEMY_AS_APPLICATION_NAME
-                    else cparams
-                ),
-            )
-            if _ENABLE_SQLALCHEMY_AS_APPLICATION_NAME
-            else super().connect(*cargs, **cparams)
-        )
 
 
 @sa_vnt.listens_for(Table, "before_create")

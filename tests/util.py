@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+# Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
 #
 
 from __future__ import annotations
@@ -28,7 +28,6 @@ from sqlalchemy.types import (
 from snowflake.sqlalchemy.custom_types import (
     ARRAY,
     GEOGRAPHY,
-    GEOMETRY,
     OBJECT,
     TIMESTAMP_LTZ,
     TIMESTAMP_NTZ,
@@ -71,7 +70,6 @@ ischema_names_baseline = {
     "OBJECT": OBJECT,
     "ARRAY": ARRAY,
     "GEOGRAPHY": GEOGRAPHY,
-    "GEOMETRY": GEOMETRY,
 }
 
 

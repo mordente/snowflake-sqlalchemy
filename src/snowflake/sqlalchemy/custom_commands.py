@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+# Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
 #
 
 from collections.abc import Sequence
@@ -259,8 +259,7 @@ class CSVFormatter(CopyFormatter):
 
     def file_extension(self, ext):
         """String that specifies the extension for files unloaded to a stage. Accepts any extension. The user is
-        responsible for specifying a valid file extension that can be read by the desired software or service.
-        """
+        responsible for specifying a valid file extension that can be read by the desired software or service."""
         if not isinstance(ext, (NoneType, string_types)):
             raise TypeError("File extension should be a string")
         self.options["FILE_EXTENSION"] = ext
@@ -387,8 +386,7 @@ class JSONFormatter(CopyFormatter):
 
     def file_extension(self, ext):
         """String that specifies the extension for files unloaded to a stage. Accepts any extension. The user is
-        responsible for specifying a valid file extension that can be read by the desired software or service.
-        """
+        responsible for specifying a valid file extension that can be read by the desired software or service."""
         if not isinstance(ext, (NoneType, string_types)):
             raise TypeError("File extension should be a string")
         self.options["FILE_EXTENSION"] = ext
@@ -484,10 +482,9 @@ class CreateStage(DDLElement):
 
     __visit_name__ = "create_stage"
 
-    def __init__(self, container, stage, replace_if_exists=False, *, temporary=False):
+    def __init__(self, container, stage, replace_if_exists=False):
         super().__init__()
         self.container = container
-        self.temporary = temporary
         self.stage = stage
         self.replace_if_exists = replace_if_exists
 
